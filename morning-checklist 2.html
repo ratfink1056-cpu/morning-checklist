@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>モーニング業務チェックリスト</title>
+<style>
+  :root {
+    --bg: #faf8f5;
+    --surface: #ffffff;
+    --border: #e8e0d5;
+    --text: #2c2418;
+    --text-sub: #7a6f60;
+    --accent: #c8773a;
+    --accent-light: #f5ede3;
+    --accent-dark: #a05e28;
+    --green: #4a7c59;
+    --green-light: #e8f2eb;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .header-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .btn-icon {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-sub);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn-icon:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .btn-icon.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Progress Bar */
+  .progress-wrap { position: relative; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+  .progress-bar-bg { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); border-radius: 99px; transition: width .4s ease; }
+
+  /* ── Admin Banner ── */
+  .admin-banner {
+    background: linear-gradient(135deg, #fff8f0, #fdebd0);
+    border: 1px solid #f0c080;
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #7a4e00;
+    margin: 10px 16px 0;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+  .admin-banner.show { display: flex; }
+
+  /* ── Completion ── */
+  .completion-card {
+    margin: 20px 16px;
+    background: linear-gradient(135deg, var(--green-light), #d4edda);
+    border: 1px solid #a8d5b5;
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    display: none;
+  }
+  .completion-card.show { display: block; }
+  .completion-card .emoji { font-size: 40px; margin-bottom: 8px; }
+  .completion-card h3 { color: var(--green); font-size: 16px; margin-bottom: 4px; }
+  .completion-card p { color: #3d6e50; font-size: 13px; }
+
+  /* ── Phase ── */
+  .phases { padding: 10px 16px; }
+
+  .phase-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--bg), var(--surface));
+  }
+  .phase-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .phase-emoji { font-size: 18px; }
+  .phase-info { flex: 1; }
+  .phase-name { font-size: 14px; font-weight: 700; }
+  .phase-time { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+  .phase-count { font-size: 11px; color: var(--text-sub); white-space: nowrap; }
+  .phase-actions { display: flex; gap: 4px; }
+  .phase-actions.hidden { display: none; }
+
+  .btn-xs {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--text-sub);
+    transition: all .15s;
+  }
+  .btn-xs:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .btn-xs.danger:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+
+  /* ── Task ── */
+  .task-list { padding: 0; }
+
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    transition: background .15s;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item.done { background: #fafaf8; }
+
+  .task-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+    margin-top: 1px;
+    background: var(--surface);
+  }
+  .task-check.checked { background: var(--green); border-color: var(--green); }
+  .task-check.checked::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+
+  .task-content { flex: 1; min-width: 0; }
+  .task-text { font-size: 14px; line-height: 1.4; transition: color .15s; }
+  .task-item.done .task-text { color: var(--text-sub); text-decoration: line-through; }
+  .task-note { font-size: 11px; color: var(--text-sub); margin-top: 3px; line-height: 1.4; }
+
+  /* ── Task Photo ── */
+  .task-photo-wrap { margin-top: 8px; }
+  .task-photo-img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .task-photo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px dashed var(--accent);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    background: var(--accent-light);
+    margin-top: 4px;
+    transition: all .15s;
+  }
+  .task-photo-btn:hover { background: #f0d8c0; }
+  .task-photo-btn.hidden { display: none; }
+
+  .task-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .task-actions.hidden { display: none; }
+
+  /* ── Add buttons ── */
+  .add-task-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    transition: background .15s;
+    border-top: 1px dashed var(--border);
+  }
+  .add-task-btn:hover { background: var(--accent-light); }
+  .add-task-btn.hidden { display: none; }
+
+  .add-phase-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    border: 2px dashed var(--border);
+    background: none;
+    color: var(--text-sub);
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    border-radius: var(--radius);
+    transition: all .15s;
+    margin-bottom: 16px;
+  }
+  .add-phase-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .add-phase-btn.hidden { display: none; }
+
+  /* ── Modals ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 24px 20px 40px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; display: block; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-error { color: var(--red); font-size: 12px; margin-top: 4px; display: none; }
+  .form-error.show { display: block; }
+
+  /* Color picker */
+  .color-options { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .color-opt {
+    width: 28px; height: 28px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: transform .15s, border-color .15s;
+  }
+  .color-opt:hover { transform: scale(1.15); }
+  .color-opt.selected { border-color: var(--text); transform: scale(1.1); }
+
+  /* Photo upload in modal */
+  .photo-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+    background: var(--bg);
+  }
+  .photo-upload-area:hover { border-color: var(--accent); background: var(--accent-light); }
+  .photo-upload-area .icon { font-size: 28px; margin-bottom: 6px; }
+  .photo-upload-area p { font-size: 12px; color: var(--text-sub); }
+  .photo-choice-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+  }
+  .photo-choice-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .photo-preview-wrap { margin-top: 10px; position: relative; display: inline-block; }
+  .photo-preview { max-width: 100%; max-height: 160px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  .photo-remove-btn {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--red); color: #fff;
+    border: none; border-radius: 50%;
+    width: 20px; height: 20px;
+    font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancel {
+    flex: 1; padding: 12px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: none; font-size: 14px; cursor: pointer; color: var(--text-sub);
+    transition: all .15s;
+  }
+  .btn-cancel:hover { background: var(--border); }
+  .btn-primary {
+    flex: 2; padding: 12px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--accent); color: #fff;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-danger {
+    flex: 1; padding: 12px;
+    border: 1px solid var(--red); border-radius: var(--radius-sm);
+    background: none; font-size: 14px; cursor: pointer; color: var(--red);
+    transition: all .15s;
+  }
+  .btn-danger:hover { background: var(--red-light); }
+
+  /* Password change section */
+  .section-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: var(--text-sub);
+    margin-bottom: 12px; text-transform: uppercase; letter-spacing: .05em;
+  }
+
+  input[type="file"] { display: none; }
+
+  /* Admin settings modal */
+  .admin-tab-bar { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .admin-tab {
+    flex: 1; padding: 10px; text-align: center;
+    font-size: 13px; cursor: pointer; color: var(--text-sub);
+    border-bottom: 2px solid transparent; transition: all .15s;
+    background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+  .admin-tab-content { display: none; }
+  .admin-tab-content.active { display: block; }
+
+  .pw-strength { height: 4px; border-radius: 2px; margin-top: 4px; transition: all .3s; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">☕ モーニング業務</div>
+      <div class="header-sub">カフェ・喫茶店 開店チェックリスト</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="adminBtn" onclick="openAdminLogin()">🔐 管理者</button>
+      <button class="btn-icon" onclick="openResetConfirm()">リセット</button>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="progressText">全体進捗</span>
+      <span id="progressCount">0 / 0 完了</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-banner" id="adminBanner">
+  ⚙️ 管理者モード — タスク・フェーズの編集が可能です
+  <button class="btn-xs" style="margin-left:auto" onclick="openAdminSettings()">⚙️ 設定</button>
+  <button class="btn-xs danger" onclick="logoutAdmin()">ログアウト</button>
+</div>
+
+<!-- Completion -->
+<div class="completion-card" id="completionCard">
+  <div class="emoji">🎉</div>
+  <h3>全タスク完了！</h3>
+  <p>お疲れ様です。ランチ営業の準備が整いました！</p>
+</div>
+
+<!-- Phases -->
+<div class="phases" id="phasesContainer"></div>
+
+<!-- Add Phase Button -->
+<div style="padding: 0 16px;">
+  <button class="add-phase-btn hidden" id="addPhaseBtn" onclick="openAddPhase()">＋ フェーズを追加</button>
+</div>
+
+<!-- ======= MODALS ======= -->
+
+<!-- Admin Login -->
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <div class="modal-title">🔐 管理者ログイン</div>
+    <div class="form-group">
+      <label class="form-label">パスワードを入力してください</label>
+      <input type="password" class="form-input" id="loginPwInput" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="form-error" id="loginError">パスワードが違います</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('loginOverlay')">キャンセル</button>
+      <button class="btn-primary" onclick="doLogin()">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Confirm -->
+<div class="overlay" id="resetOverlay">
+  <div class="modal">
+    <div class="modal-title">🔄 チェックをリセットしますか？</div>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:4px;">全てのチェックが外れます。</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('resetOverlay')">キャンセル</button>
+      <button class="btn-danger" onclick="doReset()">リセットする</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Phase Confirm -->
+<div class="overlay" id="deletePhaseOverlay">
+  <div class="modal">
+    <div class="modal-title">🗑️ フェーズを削除</div>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:4px;">このフェーズの全タスクも削除されます。</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('deletePhaseOverlay')">キャンセル</button>
+      <button class="btn-danger" onclick="confirmDeletePhase()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Phase Edit Modal -->
+<div class="overlay" id="phaseEditOverlay">
+  <div class="modal">
+    <div class="modal-title" id="phaseModalTitle">📋 フェーズを編集</div>
+    <div class="form-group">
+      <label class="form-label">フェーズ名 *</label>
+      <input type="text" class="form-input" id="phaseNameInput" placeholder="例：開店前準備">
+    </div>
+    <div class="form-group">
+      <label class="form-label">時間帯</label>
+      <input type="text" class="form-input" id="phaseTimeInput" placeholder="例：7:00〜8:00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">絵文字</label>
+      <input type="text" class="form-input" id="phaseEmojiInput" placeholder="例：🌅" maxlength="4">
+    </div>
+    <div class="form-group">
+      <label class="form-label">カラー</label>
+      <div class="color-options" id="colorOptions"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('phaseEditOverlay')">キャンセル</button>
+      <button class="btn-primary" onclick="savePhase()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Edit Modal -->
+<div class="overlay" id="taskEditOverlay">
+  <div class="modal">
+    <div class="modal-title" id="taskModalTitle">✏️ タスクを編集</div>
+    <div class="form-group">
+      <label class="form-label">タスク内容 *</label>
+      <input type="text" class="form-input" id="taskTextInput" placeholder="例：コーヒーマシンの電源を入れる">
+    </div>
+    <div class="form-group">
+      <label class="form-label">メモ・注意事項（任意）</label>
+      <textarea class="form-textarea" id="taskNoteInput" placeholder="例：温度設定は90℃に確認"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">📸 参考写真（任意）</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button type="button" class="photo-choice-btn" onclick="document.getElementById('taskCameraInput').click()">
+          📷 カメラで撮影
+        </button>
+        <button type="button" class="photo-choice-btn" onclick="document.getElementById('taskPhotoInput').click()">
+          🖼️ ライブラリから選択
+        </button>
+      </div>
+      <input type="file" id="taskCameraInput" accept="image/*" capture="environment" onchange="handlePhotoUpload(event)">
+      <input type="file" id="taskPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+      <div class="photo-preview-wrap" id="photoPreviewWrap" style="display:none">
+        <img class="photo-preview" id="photoPreviewImg" src="">
+        <button class="photo-remove-btn" onclick="removePhoto()">✕</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('taskEditOverlay')">キャンセル</button>
+      <button class="btn-primary" onclick="saveTask()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Settings Modal -->
+<div class="overlay" id="adminSettingsOverlay">
+  <div class="modal">
+    <div class="modal-title">⚙️ 管理者設定</div>
+    <div class="admin-tab-bar">
+      <button class="admin-tab active" onclick="switchAdminTab('pw')">🔑 パスワード変更</button>
+      <button class="admin-tab" onclick="switchAdminTab('data')">💾 データ管理</button>
+    </div>
+
+    <!-- PW Tab -->
+    <div class="admin-tab-content active" id="adminTab-pw">
+      <div class="form-group">
+        <label class="form-label">現在のパスワード</label>
+        <input type="password" class="form-input" id="currentPwInput" placeholder="現在のパスワード">
+        <div class="form-error" id="currentPwError">パスワードが違います</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しいパスワード</label>
+        <input type="password" class="form-input" id="newPwInput" placeholder="新しいパスワード" oninput="checkPwStrength()">
+        <div class="pw-strength" id="pwStrength"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しいパスワード（確認）</label>
+        <input type="password" class="form-input" id="newPwConfirmInput" placeholder="もう一度入力">
+        <div class="form-error" id="newPwError">パスワードが一致しません</div>
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="changePassword()">パスワードを変更する</button>
+      <div class="form-error" id="pwSuccessMsg" style="color:var(--green);display:none;margin-top:8px;">✅ パスワードを変更しました</div>
+    </div>
+
+    <!-- Data Tab -->
+    <div class="admin-tab-content" id="adminTab-data">
+      <p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">チェックリストデータのエクスポート・インポートができます。</p>
+      <button class="btn-primary" style="width:100%;margin-bottom:10px" onclick="exportData()">📤 データをエクスポート</button>
+      <button class="btn-cancel" style="width:100%;margin-bottom:10px" onclick="document.getElementById('importFileInput').click()">📥 データをインポート</button>
+      <input type="file" id="importFileInput" accept=".json" onchange="importData(event)">
+      <hr class="section-divider">
+      <button class="btn-danger" style="width:100%" onclick="clearAllData()">⚠️ 全データをリセット（初期化）</button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-cancel" onclick="closeOverlay('adminSettingsOverlay')" style="flex:1">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========= STATE =========
+const COLORS = ['#c8773a','#4a7c59','#2980b9','#8e44ad','#c0392b','#16a085','#d35400','#2c3e50','#7f8c8d'];
+const DEFAULT_PW = 'cafe1234';
+const DEFAULT_PHASES = [
+  {
+    id:'p1', name:'開店前準備', time:'7:00〜8:00', emoji:'🌅', color:'#c8773a',
+    tasks:[
+      {id:'t1',text:'鍵を開ける・警備解除',note:'警備会社コード: 確認票参照',photo:null,done:false},
+      {id:'t2',text:'照明・空調を起動',note:null,photo:null,done:false},
+      {id:'t3',text:'レジの電源を入れ釣り銭確認',note:'釣り銭 ¥30,000 確認',photo:null,done:false},
+    ]
+  },
+  {
+    id:'p2', name:'厨房準備', time:'7:30〜8:30', emoji:'🍳', color:'#4a7c59',
+    tasks:[
+      {id:'t4',text:'コーヒーマシン起動・洗浄',note:'温度設定 92℃',photo:null,done:false},
+      {id:'t5',text:'食材の在庫確認・補充',note:null,photo:null,done:false},
+      {id:'t6',text:'モーニングセットの仕込み',note:'トースト・たまご・サラダ',photo:null,done:false},
+    ]
+  },
+  {
+    id:'p3', name:'ホール準備', time:'8:00〜9:00', emoji:'🪑', color:'#2980b9',
+    tasks:[
+      {id:'t7',text:'テーブル・椅子の配置確認',note:null,photo:null,done:false},
+      {id:'t8',text:'メニュー・卓上備品のセット',note:null,photo:null,done:false},
+      {id:'t9',text:'トイレ清掃・消耗品補充',note:null,photo:null,done:false},
+    ]
+  },
+];
+
+let state = {
+  phases: [],
+  adminPw: DEFAULT_PW,
+  isAdmin: false,
+};
+
+let editingPhaseId = null;
+let editingTaskId = null;
+let editingTaskPhaseId = null;
+let deletingPhaseId = null;
+let pendingPhotoData = null; // base64 string or null
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('morningChecklist_v2');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state.phases = parsed.phases || DEFAULT_PHASES;
+      state.adminPw = parsed.adminPw || DEFAULT_PW;
+    } else {
+      state.phases = JSON.parse(JSON.stringify(DEFAULT_PHASES));
+    }
+  } catch { state.phases = JSON.parse(JSON.stringify(DEFAULT_PHASES)); }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('morningChecklist_v2', JSON.stringify({
+      phases: state.phases,
+      adminPw: state.adminPw,
+    }));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+      const noPhoto = JSON.parse(JSON.stringify({phases: state.phases, adminPw: state.adminPw}));
+      noPhoto.phases.forEach(p => p.tasks.forEach(t => { if (t.photo) t.photo = null; }));
+      try {
+        localStorage.setItem('morningChecklist_v2', JSON.stringify(noPhoto));
+        alert('⚠️ 写真データが大きすぎるため保存できませんでした。写真なしで保存しました。');
+      } catch(e2) {
+        alert('⚠️ データの保存に失敗しました。ストレージの空き容量を確認してください。');
+      }
+    }
+  }
+}
+
+// ========= RENDER =========
+function render() {
+  const container = document.getElementById('phasesContainer');
+  container.innerHTML = '';
+
+  let totalTasks = 0, doneTasks = 0;
+  state.phases.forEach(phase => {
+    totalTasks += phase.tasks.length;
+    doneTasks += phase.tasks.filter(t => t.done).length;
+  });
+
+  document.getElementById('progressCount').textContent = `${doneTasks} / ${totalTasks} 完了`;
+  const pct = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `全体進捗`;
+
+  const complete = totalTasks > 0 && doneTasks === totalTasks;
+  document.getElementById('completionCard').classList.toggle('show', complete);
+
+  state.phases.forEach(phase => {
+    const phaseDone = phase.tasks.filter(t => t.done).length;
+    const card = document.createElement('div');
+    card.className = 'phase-card';
+    card.innerHTML = `
+      <div class="phase-header">
+        <div class="phase-color-dot" style="background:${phase.color}"></div>
+        <div class="phase-emoji">${phase.emoji || '📋'}</div>
+        <div class="phase-info">
+          <div class="phase-name">${esc(phase.name)}</div>
+          ${phase.time ? `<div class="phase-time">${esc(phase.time)}</div>` : ''}
+        </div>
+        <div class="phase-count">${phaseDone}/${phase.tasks.length}</div>
+        <div class="phase-actions ${state.isAdmin ? '' : 'hidden'}">
+          <button class="btn-xs" onclick="openEditPhase('${phase.id}')">編集</button>
+          <button class="btn-xs danger" onclick="openDeletePhase('${phase.id}')">削除</button>
+        </div>
+      </div>
+      <div class="task-list" id="tasks-${phase.id}"></div>
+      <button class="add-task-btn ${state.isAdmin ? '' : 'hidden'}" onclick="openAddTask('${phase.id}')">＋ タスクを追加</button>
+    `;
+    container.appendChild(card);
+
+    const taskList = card.querySelector(`#tasks-${phase.id}`);
+    phase.tasks.forEach(task => {
+      const item = document.createElement('div');
+      item.className = 'task-item' + (task.done ? ' done' : '');
+      item.innerHTML = `
+        <div class="task-check ${task.done ? 'checked' : ''}" onclick="toggleTask('${phase.id}','${task.id}')"></div>
+        <div class="task-content">
+          <div class="task-text">${esc(task.text)}</div>
+          ${task.note ? `<div class="task-note">📝 ${esc(task.note)}</div>` : ''}
+          <div class="task-photo-wrap">
+            ${task.photo ? `<img class="task-photo-img" src="${task.photo}" alt="参考写真">` : ''}
+            <button class="task-photo-btn ${state.isAdmin ? '' : 'hidden'}" onclick="openPhotoEdit('${phase.id}','${task.id}')">
+              📸 ${task.photo ? '写真を変更' : '写真を追加'}
+            </button>
+          </div>
+        </div>
+        <div class="task-actions ${state.isAdmin ? '' : 'hidden'}">
+          <button class="btn-xs" onclick="openEditTask('${phase.id}','${task.id}')">編集</button>
+          <button class="btn-xs danger" onclick="deleteTask('${phase.id}','${task.id}')">削除</button>
+        </div>
+      `;
+      taskList.appendChild(item);
+    });
+  });
+
+  document.getElementById('addPhaseBtn').classList.toggle('hidden', !state.isAdmin);
+  document.getElementById('adminBanner').classList.toggle('show', state.isAdmin);
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ========= ACTIONS =========
+function toggleTask(phaseId, taskId) {
+  const phase = state.phases.find(p => p.id === phaseId);
+  const task = phase.tasks.find(t => t.id === taskId);
+  task.done = !task.done;
+  saveState(); render();
+}
+
+function doReset() {
+  state.phases.forEach(p => p.tasks.forEach(t => t.done = false));
+  saveState(); render();
+  closeOverlay('resetOverlay');
+}
+
+// ========= ADMIN =========
+function openAdminLogin() {
+  if (state.isAdmin) { logoutAdmin(); return; }
+  document.getElementById('loginPwInput').value = '';
+  document.getElementById('loginError').classList.remove('show');
+  openOverlay('loginOverlay');
+  setTimeout(() => document.getElementById('loginPwInput').focus(), 300);
+}
+
+function doLogin() {
+  const val = document.getElementById('loginPwInput').value;
+  if (val === state.adminPw) {
+    state.isAdmin = true;
+    closeOverlay('loginOverlay');
+    document.getElementById('adminBtn').classList.add('active');
+    render();
+  } else {
+    document.getElementById('loginError').classList.add('show');
+  }
+}
+
+function logoutAdmin() {
+  state.isAdmin = false;
+  document.getElementById('adminBtn').classList.remove('active');
+  render();
+}
+
+// ========= PHASE CRUD =========
+function initColorOptions(selected) {
+  const wrap = document.getElementById('colorOptions');
+  wrap.innerHTML = '';
+  COLORS.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'color-opt' + (c === selected ? ' selected' : '');
+    div.style.background = c;
+    div.onclick = () => {
+      wrap.querySelectorAll('.color-opt').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+    };
+    wrap.appendChild(div);
+  });
+}
+
+function openAddPhase() {
+  editingPhaseId = null;
+  document.getElementById('phaseModalTitle').textContent = '📋 フェーズを追加';
+  document.getElementById('phaseNameInput').value = '';
+  document.getElementById('phaseTimeInput').value = '';
+  document.getElementById('phaseEmojiInput').value = '';
+  initColorOptions(COLORS[0]);
+  openOverlay('phaseEditOverlay');
+}
+
+function openEditPhase(id) {
+  const phase = state.phases.find(p => p.id === id);
+  editingPhaseId = id;
+  document.getElementById('phaseModalTitle').textContent = '📋 フェーズを編集';
+  document.getElementById('phaseNameInput').value = phase.name;
+  document.getElementById('phaseTimeInput').value = phase.time || '';
+  document.getElementById('phaseEmojiInput').value = phase.emoji || '';
+  initColorOptions(phase.color);
+  openOverlay('phaseEditOverlay');
+}
+
+function savePhase() {
+  const name = document.getElementById('phaseNameInput').value.trim();
+  if (!name) { alert('フェーズ名を入力してください'); return; }
+  const selectedColor = document.querySelector('#colorOptions .color-opt.selected');
+  const color = selectedColor ? selectedColor.style.background : COLORS[0];
+  const phaseData = {
+    name,
+    time: document.getElementById('phaseTimeInput').value.trim(),
+    emoji: document.getElementById('phaseEmojiInput').value.trim() || '📋',
+    color,
+  };
+  if (editingPhaseId) {
+    const phase = state.phases.find(p => p.id === editingPhaseId);
+    Object.assign(phase, phaseData);
+  } else {
+    state.phases.push({ id: 'p' + Date.now(), tasks: [], ...phaseData });
+  }
+  saveState(); render();
+  closeOverlay('phaseEditOverlay');
+}
+
+function openDeletePhase(id) {
+  deletingPhaseId = id;
+  openOverlay('deletePhaseOverlay');
+}
+
+function confirmDeletePhase() {
+  state.phases = state.phases.filter(p => p.id !== deletingPhaseId);
+  saveState(); render();
+  closeOverlay('deletePhaseOverlay');
+}
+
+// ========= TASK CRUD =========
+function openAddTask(phaseId) {
+  editingTaskId = null;
+  editingTaskPhaseId = phaseId;
+  pendingPhotoData = null;
+  document.getElementById('taskModalTitle').textContent = '✏️ タスクを追加';
+  document.getElementById('taskTextInput').value = '';
+  document.getElementById('taskNoteInput').value = '';
+  resetPhotoPreview();
+  openOverlay('taskEditOverlay');
+}
+
+function openEditTask(phaseId, taskId) {
+  const phase = state.phases.find(p => p.id === phaseId);
+  const task = phase.tasks.find(t => t.id === taskId);
+  editingTaskId = taskId;
+  editingTaskPhaseId = phaseId;
+  pendingPhotoData = task.photo || null;
+  document.getElementById('taskModalTitle').textContent = '✏️ タスクを編集';
+  document.getElementById('taskTextInput').value = task.text;
+  document.getElementById('taskNoteInput').value = task.note || '';
+  if (task.photo) { showPhotoPreview(task.photo); } else { resetPhotoPreview(); }
+  openOverlay('taskEditOverlay');
+}
+
+function saveTask() {
+  const text = document.getElementById('taskTextInput').value.trim();
+  if (!text) { alert('タスク内容を入力してください'); return; }
+  const phase = state.phases.find(p => p.id === editingTaskPhaseId);
+  const taskData = {
+    text,
+    note: document.getElementById('taskNoteInput').value.trim() || null,
+    photo: pendingPhotoData,
+  };
+  if (editingTaskId) {
+    const task = phase.tasks.find(t => t.id === editingTaskId);
+    Object.assign(task, taskData);
+  } else {
+    phase.tasks.push({ id: 't' + Date.now(), done: false, ...taskData });
+  }
+  saveState(); render();
+  closeOverlay('taskEditOverlay');
+}
+
+function deleteTask(phaseId, taskId) {
+  const phase = state.phases.find(p => p.id === phaseId);
+  phase.tasks = phase.tasks.filter(t => t.id !== taskId);
+  saveState(); render();
+}
+
+// ========= PHOTO =========
+function openPhotoEdit(phaseId, taskId) {
+  openEditTask(phaseId, taskId);
+}
+
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // 画像を圧縮してlocalStorage容量制限を回避
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800; // 最大辺800px
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      pendingPhotoData = canvas.toDataURL('image/jpeg', 0.75);
+      showPhotoPreview(pendingPhotoData);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function showPhotoPreview(src) {
+  document.getElementById('photoPreviewImg').src = src;
+  document.getElementById('photoPreviewWrap').style.display = 'inline-block';
+}
+
+function resetPhotoPreview() {
+  document.getElementById('photoPreviewImg').src = '';
+  document.getElementById('photoPreviewWrap').style.display = 'none';
+  pendingPhotoData = null;
+}
+
+function removePhoto() {
+  pendingPhotoData = null;
+  resetPhotoPreview();
+}
+
+// ========= PASSWORD =========
+function openAdminSettings() {
+  document.getElementById('currentPwInput').value = '';
+  document.getElementById('newPwInput').value = '';
+  document.getElementById('newPwConfirmInput').value = '';
+  document.getElementById('currentPwError').classList.remove('show');
+  document.getElementById('newPwError').classList.remove('show');
+  document.getElementById('pwSuccessMsg').style.display = 'none';
+  document.getElementById('pwStrength').style.background = '';
+  switchAdminTab('pw');
+  openOverlay('adminSettingsOverlay');
+}
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.admin-tab[onclick*="${tab}"]`).classList.add('active');
+  document.getElementById('adminTab-' + tab).classList.add('active');
+}
+
+function checkPwStrength() {
+  const pw = document.getElementById('newPwInput').value;
+  const bar = document.getElementById('pwStrength');
+  if (!pw) { bar.style.background = ''; bar.style.width = '0'; return; }
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const colors = ['#e74c3c','#e67e22','#f1c40f','#2ecc71'];
+  bar.style.width = (score * 25) + '%';
+  bar.style.background = colors[score - 1] || '#e74c3c';
+  bar.style.display = 'block';
+}
+
+function changePassword() {
+  const current = document.getElementById('currentPwInput').value;
+  const newPw = document.getElementById('newPwInput').value;
+  const confirm = document.getElementById('newPwConfirmInput').value;
+  document.getElementById('currentPwError').classList.remove('show');
+  document.getElementById('newPwError').classList.remove('show');
+  document.getElementById('pwSuccessMsg').style.display = 'none';
+
+  if (current !== state.adminPw) {
+    document.getElementById('currentPwError').classList.add('show'); return;
+  }
+  if (!newPw) { alert('新しいパスワードを入力してください'); return; }
+  if (newPw !== confirm) {
+    document.getElementById('newPwError').classList.add('show'); return;
+  }
+  state.adminPw = newPw;
+  saveState();
+  document.getElementById('pwSuccessMsg').style.display = 'block';
+  document.getElementById('currentPwInput').value = '';
+  document.getElementById('newPwInput').value = '';
+  document.getElementById('newPwConfirmInput').value = '';
+}
+
+// ========= DATA EXPORT/IMPORT =========
+function exportData() {
+  const blob = new Blob([JSON.stringify({phases: state.phases, adminPw: state.adminPw}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'morning-checklist-backup.json';
+  a.click();
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.phases) {
+        state.phases = data.phases;
+        if (data.adminPw) state.adminPw = data.adminPw;
+        saveState(); render();
+        alert('✅ インポートが完了しました');
+        closeOverlay('adminSettingsOverlay');
+      } else { alert('データ形式が正しくありません'); }
+    } catch { alert('JSONの読み込みに失敗しました'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('全てのデータを初期化しますか？この操作は元に戻せません。')) return;
+  state.phases = JSON.parse(JSON.stringify(DEFAULT_PHASES));
+  state.adminPw = DEFAULT_PW;
+  saveState(); render();
+  closeOverlay('adminSettingsOverlay');
+}
+
+// ========= OVERLAY HELPERS =========
+function openOverlay(id) { document.getElementById(id).classList.add('show'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+function openResetConfirm() { openOverlay('resetOverlay'); }
+
+// Close on backdrop click
+document.querySelectorAll('.overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// ========= INIT =========
+loadState();
+render();
+</script>
+</body>
+</html>
