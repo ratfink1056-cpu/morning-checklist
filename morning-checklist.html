@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>モーニング業務チェックリスト</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:linear-gradient(160deg,#ffe4f0 0%,#fce7f3 40%,#fff0e6 100%);min-height:100vh;color:#3b1a2e;padding-bottom:40px;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ヘッダー */
+  .header{background:linear-gradient(160deg,#ffd6e8,#ffe4f0);border-bottom:1px solid #f9b8d4;padding:24px 16px 16px;position:sticky;top:0;z-index:10;}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+  .title{font-size:22px;font-weight:900;background:linear-gradient(90deg,#f97316,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .subtitle{font-size:11px;color:#c06080;margin-top:2px;}
+  .header-btns{display:flex;gap:6px;}
+  .header-btn{background:rgba(255,255,255,0.7);border:1px solid #f9b8d4;border-radius:10px;padding:6px 11px;font-size:11px;color:#c06080;font-weight:700;}
+  .admin-badge{margin-top:8px;background:#f9731618;border:1px solid #f9731644;border-radius:10px;padding:6px 12px;font-size:11px;color:#f97316;font-weight:700;}
+
+  /* 進捗 */
+  .progress-label{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;color:#c06080;font-weight:600;}
+  .progress-val{font-weight:800;color:#f97316;}
+  .progress-bar{height:10px;background:#fce7f3;border-radius:8px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#f97316,#ec4899);transition:width 0.4s;}
+  .progress-pct{text-align:right;font-size:11px;color:#c06080;margin-top:3px;}
+
+  /* フェーズ */
+  .phases{padding:14px 14px 0;}
+  .phase-card{margin-bottom:12px;background:rgba(255,255,255,0.72);border:1px solid #f9b8d4;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px #ec489910;}
+  .phase-card.all-done{border-color:var(--col);}
+  .phase-header{display:flex;align-items:center;padding:13px 14px;gap:10px;width:100%;background:none;border:none;text-align:left;}
+  .phase-icon{width:44px;height:44px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all 0.3s;}
+  .phase-meta{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+  .phase-tag{font-size:10px;font-weight:800;letter-spacing:1px;}
+  .phase-time{font-size:10px;color:#c06080;}
+  .phase-title{font-size:14px;font-weight:800;color:#3b1a2e;}
+  .mini-progress{display:flex;align-items:center;gap:6px;margin-top:5px;}
+  .mini-bar{flex:1;height:4px;background:#fce7f3;border-radius:4px;overflow:hidden;}
+  .mini-fill{height:100%;border-radius:4px;transition:width 0.4s;}
+  .mini-count{font-size:10px;font-weight:700;min-width:36px;}
+  .chevron{font-size:16px;color:#c06080;transition:transform 0.2s;margin-left:auto;}
+  .admin-phase-btns{display:flex;gap:2px;flex-shrink:0;}
+  .icon-btn{background:none;border:none;font-size:15px;padding:4px 5px;}
+
+  /* タスク */
+  .task-list{padding:0 14px 12px;border-top:1px solid #fce7f3;}
+  .task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #fce7f3;}
+  .task-item:last-child{border-bottom:none;}
+  .check-box{width:24px;height:24px;border-radius:8px;flex-shrink:0;margin-top:1px;border:2px solid #f9b8d4;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.15s;background:rgba(255,255,255,0.8);}
+  .check-box.done{background:var(--col);border-color:var(--col);}
+  .check-mark{color:#fff;font-weight:900;display:none;}
+  .check-box.done .check-mark{display:block;}
+  .task-text{font-size:13px;font-weight:600;color:#3b1a2e;transition:all 0.15s;}
+  .task-text.done{color:#c06080;text-decoration:line-through;}
+  .task-note{margin-top:4px;font-size:11px;color:#c06080;border-radius:8px;padding:4px 8px;line-height:1.5;}
+  .admin-task-btns{display:flex;gap:1px;flex-shrink:0;margin-left:auto;}
+  .add-task-btn{margin-top:10px;width:100%;background:rgba(255,255,255,0.7);border:1px dashed #f9b8d4;border-radius:12px;padding:9px 0;font-size:12px;font-weight:700;}
+  .add-phase-btn{width:100%;margin-bottom:14px;background:linear-gradient(135deg,#f9731618,#ec489918);color:#f97316;border:2px dashed #f9b8d4;border-radius:16px;padding:13px 0;font-size:13px;font-weight:800;}
+
+  /* 完了メッセージ */
+  .complete-msg{margin:0 14px;background:linear-gradient(135deg,#f9731622,#ec489922);border:1px solid #f97316;border-radius:18px;padding:20px;text-align:center;}
+  .complete-emoji{font-size:32px;margin-bottom:8px;}
+  .complete-title{font-size:16px;font-weight:800;color:#f97316;}
+  .complete-sub{font-size:12px;color:#c06080;margin-top:4px;}
+
+  /* モーダル共通 */
+  .overlay{position:fixed;inset:0;background:#000b;z-index:50;display:flex;align-items:flex-end;}
+  .overlay.center{align-items:center;justify-content:center;padding:0 20px;}
+  .modal{background:#fff8fb;border-radius:24px 24px 0 0;padding:24px 18px 44px;width:100%;max-width:430px;margin:0 auto;border:1px solid #f9b8d4;border-bottom:none;max-height:88vh;overflow-y:auto;}
+  .modal.center-modal{border-radius:24px;border:1px solid #f9b8d4;text-align:center;padding:28px 20px;}
+  .modal-handle{width:40px;height:4px;background:#f9b8d4;border-radius:4px;margin:0 auto 20px;}
+  .modal-title{font-size:16px;font-weight:800;margin-bottom:16px;color:#3b1a2e;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11px;color:#c06080;font-weight:700;margin-bottom:5px;}
+  .field input{background:rgba(255,255,255,0.85);color:#3b1a2e;border:1px solid #f9b8d4;border-radius:10px;padding:10px 14px;font-size:13px;width:100%;font-family:inherit;}
+  .emoji-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .emoji-btn{font-size:22px;background:rgba(255,255,255,0.8);border:1px solid #f9b8d4;border-radius:10px;padding:4px 8px;}
+  .emoji-btn.active{background:#f9731622;border-color:#f97316;}
+  .color-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .color-dot{width:32px;height:32px;border-radius:50%;border:2px solid transparent;}
+  .color-dot.active{border-color:#3b1a2e;border-width:3px;}
+  .modal-btns{display:flex;gap:8px;margin-top:4px;}
+  .btn-primary{flex:1;border:none;border-radius:12px;padding:12px 0;font-size:13px;font-weight:800;color:#fff;}
+  .btn-ghost{flex:1;background:rgba(255,255,255,0.7);color:#c06080;border:1px solid #f9b8d4;border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;}
+  .pw-input{background:rgba(255,255,255,0.85);color:#3b1a2e;border:1px solid #f9b8d4;border-radius:10px;padding:12px 14px;font-size:20px;width:100%;text-align:center;letter-spacing:6px;font-family:inherit;margin-bottom:8px;}
+  .pw-error{font-size:11px;color:#f43f5e;margin-bottom:8px;}
+  .center-icon{font-size:32px;margin-bottom:12px;}
+  .center-title{font-size:17px;font-weight:800;margin-bottom:6px;}
+  .center-sub{font-size:12px;color:#c06080;margin-bottom:22px;}
+  .preset-row{background:rgba(255,255,255,0.8);border:1px solid #f9b8d4;border-radius:14px;padding:12px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ヘッダー -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="title">モーニング業務</div>
+        <div class="subtitle">カフェ・喫茶店 開店チェックリスト</div>
+      </div>
+      <div class="header-btns">
+        <button class="header-btn" id="adminBtn" onclick="toggleAdmin()">🔐 管理者</button>
+        <button class="header-btn" onclick="showReset()">リセット</button>
+      </div>
+    </div>
+    <div id="adminBadge" class="admin-badge" style="display:none">⚙️ 管理者モード — タスク・フェーズの編集が可能です</div>
+    <div>
+      <div class="progress-label"><span>全体進捗</span><span class="progress-val" id="progressLabel">0 / 0 完了</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-pct" id="progressPct">0%</div>
+    </div>
+  </div>
+
+  <!-- フェーズ一覧 -->
+  <div class="phases" id="phaseList"></div>
+
+  <!-- 完了メッセージ -->
+  <div class="complete-msg" id="completeMsg" style="display:none">
+    <div class="complete-emoji">🎉</div>
+    <div class="complete-title">全タスク完了！</div>
+    <div class="complete-sub">お疲れ様です。ランチ営業の準備が整いました！</div>
+  </div>
+</div>
+
+<!-- モーダル群 -->
+<div class="overlay" id="loginModal" style="display:none" onclick="closeModal('loginModal')">
+  <div class="modal center-modal" style="border-radius:24px" onclick="event.stopPropagation()">
+    <div class="center-icon">🔐</div>
+    <div class="center-title">管理者ログイン</div>
+    <div class="center-sub">パスワードを入力してください</div>
+    <input class="pw-input" type="password" id="pwInput" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="pw-error" id="pwError" style="display:none">パスワードが違います</div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('loginModal')">キャンセル</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#ec4899,#ec4899bb)" onclick="doLogin()">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="resetModal" style="display:none" onclick="closeModal('resetModal')">
+  <div class="modal center-modal" style="border-radius:24px" onclick="event.stopPropagation()">
+    <div class="center-icon">🔄</div>
+    <div class="center-title">チェックをリセットしますか？</div>
+    <div class="center-sub">全てのチェックが外れます。</div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('resetModal')">キャンセル</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#f97316,#f97316bb)" onclick="doReset()">リセットする</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="deletePhaseModal" style="display:none" onclick="closeModal('deletePhaseModal')">
+  <div class="modal center-modal" style="border-radius:24px" onclick="event.stopPropagation()">
+    <div class="center-icon" id="deletePhaseName"></div>
+    <div class="center-title" id="deletePhaseTitle"></div>
+    <div class="center-sub">このフェーズの全タスクも削除されます。</div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('deletePhaseModal')">キャンセル</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#f43f5e,#f43f5ebb)" onclick="doDeletePhase()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="phaseModal" style="display:none" onclick="closeModal('phaseModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="phaseModalTitle">フェーズを編集</div>
+    <div class="field"><label>フェーズ名 *</label><input id="pmTitle" placeholder="例：クローズ業務"></div>
+    <div class="field"><label>時間帯</label><input id="pmTime" placeholder="例：14:00〜"></div>
+    <div class="field"><label>絵文字</label><div class="emoji-grid" id="pmEmojiGrid"></div></div>
+    <div class="field"><label>カラー</label><div class="color-grid" id="pmColorGrid"></div></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn-ghost" onclick="closeModal('phaseModal')">キャンセル</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#ec4899,#ec4899bb)" onclick="savePhase()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="taskModal" style="display:none" onclick="closeModal('taskModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="taskModalTitle">タスクを編集</div>
+    <div class="field"><label>タスク内容 *</label><input id="tmText" placeholder="例：コーヒーマシーンの準備"></div>
+    <div class="field"><label>メモ・注意事項（任意）</label><input id="tmNote" placeholder="例：必ず換気扇が先！"></div>
+    <div class="modal-btns" style="margin-top:8px">
+      <button class="btn-ghost" onclick="closeModal('taskModal')">キャンセル</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#f97316,#f97316bb)" onclick="saveTask()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "1234";
+const COLORS = ["#f97316","#ec4899","#a855f7","#10b981","#3b82f6","#f43f5e","#eab308","#06b6d4"];
+const EMOJIS = ["🌅","☕","🍳","🥗","✨","🌸","🔑","📋","🧹","🍽️","🥐","🧃","🫙","🍗","🥬","🌾","💴","📦"];
+
+let isAdmin = false;
+let checked = {};
+let openPhase = 1;
+let pendingDeletePhaseId = null;
+let editingPhaseId = null;
+let editingTaskPhaseId = null;
+let editingTaskId = null;
+let pmEmoji = "🌅", pmColor = "#f97316";
+
+let phases = [
+  {id:1,phase:"PHASE 1",title:"出勤時の準備",time:"〜6:30",emoji:"🌅",color:"#f97316",tasks:[
+    {id:"1-1",text:"換気扇を回す",note:"必ず換気扇が先！"},
+    {id:"1-2",text:"ガスの元栓を開ける",note:""},
+    {id:"1-3",text:"給湯器の元栓を開ける",note:""},
+    {id:"1-4",text:"フライヤーの元栓を開ける",note:""},
+    {id:"1-5",text:"ガス台・オーブンの元栓を開ける",note:""},
+    {id:"1-6",text:"照明・エアコン・音楽の確認",note:""},
+    {id:"1-7",text:"コーヒーマシーンの準備",note:""},
+    {id:"1-8",text:"ウインナー・スクランブルエッグを温める",note:""},
+    {id:"1-9",text:"食器類・カトラリー類の準備",note:""},
+    {id:"1-10",text:"レジにお金を入れる",note:""},
+  ]},
+  {id:2,phase:"PHASE 2",title:"開店後の対応",time:"6:30〜",emoji:"☕",color:"#ec4899",tasks:[
+    {id:"2-1",text:"ホテル宿泊客向けオープン",note:"6:30〜"},
+    {id:"2-2",text:"一般向けオープン",note:"7:00〜"},
+  ]},
+  {id:3,phase:"PHASE 3",title:"営業中の食材管理",time:"営業中",emoji:"🍳",color:"#a855f7",tasks:[
+    {id:"3-1",text:"コーヒーマシーンの豆・水・牛乳を常に確認",note:"習慣化すること！"},
+    {id:"3-2",text:"下げた食器を洗浄する",note:"⚠ 皿の裏まで丁寧に。洗い残し注意！"},
+    {id:"3-3",text:"ウインナー・スクランブルエッグの解凍",note:"冷凍のまま寸胴に20分。入れすぎると袋が破けるので必ず確認！"},
+  ]},
+  {id:4,phase:"PHASE 4",title:"ランチ営業に向けた準備",time:"モーニング後半",emoji:"🥗",color:"#10b981",tasks:[
+    {id:"4-1",text:"ランチ用のお米を炊く",note:"平日3〜4合 / 土日祝7〜8合（前日残りがある場合は調整）"},
+    {id:"4-2",text:"野菜のカット（足りなそうな場合）",note:"グリーンリーフ×2 / 紫キャベツ1/4 をカット＆スライス"},
+    {id:"4-3",text:"寸胴を洗って新しい水で沸かす",note:""},
+    {id:"4-4",text:"納品された食材を裏にしまう",note:"ホールカウンターに出しっぱなし厳禁！できれば入庫登録まで"},
+    {id:"4-5",text:"タブレットで売り切れ・品切れを確認",note:"キッチンモニターアプリで出せるのに品切れになっていないかチェック"},
+  ]},
+  {id:5,phase:"PHASE 5",title:"ランチ開店前の仕上げ",time:"モーニング終了後",emoji:"✨",color:"#3b82f6",tasks:[
+    {id:"5-1",text:"モーニングのトレー・調理器具の片付け・洗浄",note:""},
+    {id:"5-2",text:"オーブンの温度を350℃に設定",note:""},
+    {id:"5-3",text:"モーニングチケットの枚数確認",note:""},
+    {id:"5-4",text:"ホテルフロントへチケットを持参しダブルチェック ☑️",note:"ホテルスタッフと枚数を必ず確認"},
+    {id:"5-5",text:"店内清掃・テーブル拭き上げ",note:""},
+    {id:"5-6",text:"テーブルのガタつき確認・調整",note:""},
+    {id:"5-7",text:"掃除機をかける",note:""},
+    {id:"5-8",text:"翌日モーニング分のパンを除ける",note:""},
+    {id:"5-9",text:"売れ残りパンの個数確認・アプリへ掲載",note:""},
+    {id:"5-10",text:"その他の補充確認",note:""},
+  ]},
+];
+
+let nextId = 1000;
+function newId(){ return String(++nextId); }
+
+function totalTasks(){ return phases.reduce((s,p)=>s+p.tasks.length,0); }
+function totalDone(){ return Object.values(checked).filter(Boolean).length; }
+function phaseDone(p){ return p.tasks.filter(t=>checked[t.id]).length; }
+
+function render(){
+  const total = totalTasks(), done = totalDone();
+  const pct = total===0?0:Math.round(done/total*100);
+  document.getElementById("progressLabel").textContent = done+" / "+total+" 完了";
+  document.getElementById("progressFill").style.width = pct+"%";
+  document.getElementById("progressPct").textContent = pct+"%";
+  document.getElementById("completeMsg").style.display = (done===total&&total>0)?"block":"none";
+
+  const list = document.getElementById("phaseList");
+  list.innerHTML = "";
+
+  phases.forEach((phase, phaseIdx)=>{
+    const done2 = phaseDone(phase);
+    const total2 = phase.tasks.length;
+    const pct2 = total2===0?0:Math.round(done2/total2*100);
+    const allDone = done2===total2&&total2>0;
+    const isOpen = openPhase===phase.id;
+
+    const card = document.createElement("div");
+    card.className = "phase-card"+(allDone?" all-done":"");
+    card.style.setProperty("--col", phase.color);
+
+    // ヘッダー行
+    const headerRow = document.createElement("div");
+    headerRow.style.cssText = "display:flex;align-items:center;padding:13px 14px;gap:8px;";
+
+    // トグルボタン部分
+    const toggleBtn = document.createElement("button");
+    toggleBtn.style.cssText = "display:flex;align-items:center;gap:10px;flex:1;background:none;border:none;text-align:left;padding:0;";
+    toggleBtn.onclick = ()=>{ openPhase = isOpen?null:phase.id; render(); };
+
+    const icon = document.createElement("div");
+    icon.className = "phase-icon";
+    icon.style.cssText = `background:${allDone?`linear-gradient(135deg,${phase.color},${phase.color}bb)`:phase.color+"18"};border:1.5px solid ${phase.color}44;`;
+    icon.textContent = allDone?"✅":phase.emoji;
+
+    const info = document.createElement("div");
+    info.style.flex="1";
+    info.innerHTML = `
+      <div class="phase-meta">
+        <span class="phase-tag" style="color:${phase.color}">${phase.phase}</span>
+        <span class="phase-time">· ${phase.time}</span>
+      </div>
+      <div class="phase-title">${phase.title}</div>
+      <div class="mini-progress">
+        <div class="mini-bar"><div class="mini-fill" style="width:${pct2}%;background:linear-gradient(90deg,${phase.color},${phase.color}99)"></div></div>
+        <span class="mini-count" style="color:${phase.color}">${done2}/${total2}</span>
+      </div>`;
+
+    const chev = document.createElement("span");
+    chev.className = "chevron";
+    chev.textContent = "▾";
+    chev.style.transform = isOpen?"rotate(180deg)":"rotate(0deg)";
+
+    toggleBtn.appendChild(icon);
+    toggleBtn.appendChild(info);
+    toggleBtn.appendChild(chev);
+    headerRow.appendChild(toggleBtn);
+
+    // 管理者ボタン
+    if(isAdmin){
+      const adminBtns = document.createElement("div");
+      adminBtns.className = "admin-phase-btns";
+      adminBtns.innerHTML = `
+        <button class="icon-btn" style="opacity:${phaseIdx===0?0.3:1}" onclick="movePhase(${phase.id},-1)">↑</button>
+        <button class="icon-btn" style="opacity:${phaseIdx===phases.length-1?0.3:1}" onclick="movePhase(${phase.id},1)">↓</button>
+        <button class="icon-btn" style="color:#f97316" onclick="openEditPhase(${phase.id})">✏️</button>
+        <button class="icon-btn" style="color:#f43f5e" onclick="confirmDeletePhase(${phase.id})">🗑</button>`;
+      headerRow.appendChild(adminBtns);
+    }
+    card.appendChild(headerRow);
+
+    // タスク一覧
+    if(isOpen){
+      const taskList = document.createElement("div");
+      taskList.className = "task-list";
+
+      phase.tasks.forEach((task, taskIdx)=>{
+        const isDone = !!checked[task.id];
+        const item = document.createElement("div");
+        item.className = "task-item";
+
+        const box = document.createElement("div");
+        box.className = "check-box"+(isDone?" done":"");
+        box.style.setProperty("--col", phase.color);
+        box.innerHTML = `<span class="check-mark">✓</span>`;
+        box.onclick = ()=>{ if(!isAdmin){ checked[task.id]=!checked[task.id]; render(); } };
+
+        const content = document.createElement("div");
+        content.style.flex="1";
+        content.innerHTML = `<div class="task-text${isDone?" done":""}">${task.text}</div>`
+          +(task.note?`<div class="task-note" style="background:${phase.color}12;border:1px solid ${phase.color}30">💡 ${task.note}</div>`:"");
+
+        item.appendChild(box);
+        item.appendChild(content);
+
+        if(isAdmin){
+          const ab = document.createElement("div");
+          ab.className = "admin-task-btns";
+          ab.innerHTML = `
+            <button class="icon-btn" style="font-size:13px;opacity:${taskIdx===0?0.3:1}" onclick="moveTask(${phase.id},'${task.id}',-1)">↑</button>
+            <button class="icon-btn" style="font-size:13px;opacity:${taskIdx===phase.tasks.length-1?0.3:1}" onclick="moveTask(${phase.id},'${task.id}',1)">↓</button>
+            <button class="icon-btn" style="font-size:13px;color:#f97316" onclick="openEditTask(${phase.id},'${task.id}')">✏️</button>
+            <button class="icon-btn" style="font-size:13px;color:#f43f5e" onclick="deleteTask(${phase.id},'${task.id}')">🗑</button>`;
+          item.appendChild(ab);
+        }
+        taskList.appendChild(item);
+      });
+
+      if(isAdmin){
+        const addBtn = document.createElement("button");
+        addBtn.className = "add-task-btn";
+        addBtn.style.color = phase.color;
+        addBtn.style.borderColor = phase.color+"88";
+        addBtn.textContent = "＋ タスクを追加";
+        addBtn.onclick = ()=>openAddTask(phase.id);
+        taskList.appendChild(addBtn);
+      }
+      card.appendChild(taskList);
+    }
+
+    list.appendChild(card);
+  });
+
+  // フェーズ追加ボタン
+  if(isAdmin){
+    const addPhaseBtn = document.createElement("button");
+    addPhaseBtn.className = "add-phase-btn";
+    addPhaseBtn.textContent = "＋ フェーズを追加";
+    addPhaseBtn.onclick = openAddPhase;
+    list.appendChild(addPhaseBtn);
+  }
+}
+
+// ── 管理者 ──
+function toggleAdmin(){
+  if(isAdmin){ isAdmin=false; document.getElementById("adminBtn").textContent="🔐 管理者"; document.getElementById("adminBadge").style.display="none"; render(); }
+  else { document.getElementById("pwInput").value=""; document.getElementById("pwError").style.display="none"; document.getElementById("loginModal").style.display="flex"; }
+}
+function doLogin(){
+  if(document.getElementById("pwInput").value===ADMIN_PASSWORD){
+    isAdmin=true; closeModal("loginModal");
+    document.getElementById("adminBtn").textContent="🔓 管理者終了";
+    document.getElementById("adminBadge").style.display="block";
+    render();
+  } else { document.getElementById("pwError").style.display="block"; }
+}
+
+// ── リセット ──
+function showReset(){ document.getElementById("resetModal").style.display="flex"; }
+function doReset(){ checked={}; closeModal("resetModal"); render(); }
+
+// ── フェーズ操作 ──
+function movePhase(id, dir){
+  const idx = phases.findIndex(p=>p.id===id);
+  const to = idx+dir;
+  if(to<0||to>=phases.length) return;
+  [phases[idx],phases[to]]=[phases[to],phases[idx]];
+  render();
+}
+function confirmDeletePhase(id){
+  pendingDeletePhaseId=id;
+  const p=phases.find(x=>x.id===id);
+  document.getElementById("deletePhaseName").textContent=p.emoji;
+  document.getElementById("deletePhaseTitle").textContent="「"+p.title+"」を削除しますか？";
+  document.getElementById("deletePhaseModal").style.display="flex";
+}
+function doDeletePhase(){
+  phases=phases.filter(p=>p.id!==pendingDeletePhaseId);
+  closeModal("deletePhaseModal"); render();
+}
+
+// ── フェーズ編集モーダル ──
+function buildPhaseModal(){
+  // 絵文字
+  const eg=document.getElementById("pmEmojiGrid");
+  eg.innerHTML="";
+  EMOJIS.forEach(e=>{
+    const b=document.createElement("button");
+    b.className="emoji-btn"+(pmEmoji===e?" active":"");
+    b.textContent=e;
+    b.onclick=()=>{ pmEmoji=e; buildPhaseModal(); };
+    eg.appendChild(b);
+  });
+  // カラー
+  const cg=document.getElementById("pmColorGrid");
+  cg.innerHTML="";
+  COLORS.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="color-dot"+(pmColor===c?" active":"");
+    b.style.background=c;
+    b.onclick=()=>{ pmColor=c; buildPhaseModal(); };
+    cg.appendChild(b);
+  });
+}
+function openEditPhase(id){
+  editingPhaseId=id;
+  const p=phases.find(x=>x.id===id);
+  pmEmoji=p.emoji; pmColor=p.color;
+  document.getElementById("phaseModalTitle").textContent="フェーズを編集";
+  document.getElementById("pmTitle").value=p.title;
+  document.getElementById("pmTime").value=p.time;
+  buildPhaseModal();
+  document.getElementById("phaseModal").style.display="flex";
+}
+function openAddPhase(){
+  editingPhaseId=null;
+  pmEmoji="🌅"; pmColor="#f97316";
+  document.getElementById("phaseModalTitle").textContent="フェーズを追加";
+  document.getElementById("pmTitle").value="";
+  document.getElementById("pmTime").value="";
+  buildPhaseModal();
+  document.getElementById("phaseModal").style.display="flex";
+}
+function savePhase(){
+  const title=document.getElementById("pmTitle").value.trim();
+  if(!title) return;
+  const time=document.getElementById("pmTime").value.trim();
+  if(editingPhaseId){
+    phases=phases.map(p=>p.id===editingPhaseId?{...p,title,time,emoji:pmEmoji,color:pmColor}:p);
+  } else {
+    phases.push({id:Date.now(),phase:"PHASE "+(phases.length+1),title,time,emoji:pmEmoji,color:pmColor,tasks:[]});
+  }
+  closeModal("phaseModal"); render();
+}
+
+// ── タスク操作 ──
+function moveTask(phaseId, taskId, dir){
+  phases=phases.map(p=>{
+    if(p.id!==phaseId) return p;
+    const arr=[...p.tasks];
+    const idx=arr.findIndex(t=>t.id===taskId);
+    const to=idx+dir;
+    if(to<0||to>=arr.length) return p;
+    [arr[idx],arr[to]]=[arr[to],arr[idx]];
+    return {...p,tasks:arr};
+  });
+  render();
+}
+function openEditTask(phaseId, taskId){
+  editingTaskPhaseId=phaseId; editingTaskId=taskId;
+  const p=phases.find(x=>x.id===phaseId);
+  const t=p.tasks.find(x=>x.id===taskId);
+  document.getElementById("taskModalTitle").textContent="タスクを編集";
+  document.getElementById("tmText").value=t.text;
+  document.getElementById("tmNote").value=t.note||"";
+  document.getElementById("taskModal").style.display="flex";
+}
+function openAddTask(phaseId){
+  editingTaskPhaseId=phaseId; editingTaskId=null;
+  document.getElementById("taskModalTitle").textContent="タスクを追加";
+  document.getElementById("tmText").value="";
+  document.getElementById("tmNote").value="";
+  document.getElementById("taskModal").style.display="flex";
+}
+function saveTask(){
+  const text=document.getElementById("tmText").value.trim();
+  if(!text) return;
+  const note=document.getElementById("tmNote").value.trim();
+  phases=phases.map(p=>{
+    if(p.id!==editingTaskPhaseId) return p;
+    if(editingTaskId){
+      return {...p,tasks:p.tasks.map(t=>t.id===editingTaskId?{...t,text,note}:t)};
+    } else {
+      return {...p,tasks:[...p.tasks,{id:newId(),text,note}]};
+    }
+  });
+  closeModal("taskModal"); render();
+}
+function deleteTask(phaseId, taskId){
+  phases=phases.map(p=>p.id===phaseId?{...p,tasks:p.tasks.filter(t=>t.id!==taskId)}:p);
+  render();
+}
+
+function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+render();
+</script>
+</body>
+</html>
